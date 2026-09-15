@@ -31,7 +31,6 @@
 └── start_app.cmd                # Windows双击入口
 ```
 
-详细设计见 [架构说明](docs/architecture.md)。
 
 ## 安装与配置
 
