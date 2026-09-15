@@ -1,11 +1,12 @@
-from pathlib import Path
+from importlib.resources import files
+import os
 from unittest import TestCase
 from unittest.mock import patch
 
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from research_source_agent.agent import AgentResult, ToolEvent
+from research_source_agent.agents.models import AgentResult, ToolEvent
 
 
 class SearchWarningTests(TestCase):
@@ -13,7 +14,8 @@ class SearchWarningTests(TestCase):
         st.cache_resource.clear()
         self.addCleanup(st.cache_resource.clear)
 
-    @patch("research_source_agent.agent.ResearchSourceAgent")
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "LANGSMITH_TRACING": "false"})
+    @patch("research_source_agent.agents.research.ResearchSourceAgent")
     def test_warnings_survive_reruns_and_followups_until_new_research(self, agent_class):
         warning = "crossref temporarily unavailable"
         agent_class.return_value.run.side_effect = [
@@ -24,7 +26,7 @@ class SearchWarningTests(TestCase):
             AgentResult(answer="Follow-up answer", tool_events=[]),
         ]
         app = AppTest.from_file(
-            str(Path(__file__).with_name("app.py")), default_timeout=20
+            str(files("research_source_agent.interfaces.web").joinpath("app.py")), default_timeout=20
         ).run()
         self.assertFalse(app.exception)
         app.chat_input[0].set_value("Find papers").run()

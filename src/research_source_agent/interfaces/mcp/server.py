@@ -6,7 +6,8 @@ from typing import Annotated, Literal
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
-from research_source_agent.article_search import search_articles
+from research_source_agent.config import load_settings
+from research_source_agent.services.retrieval import search_articles
 
 mcp = FastMCP('ResearchArticleAgent')
 
@@ -63,5 +64,10 @@ def search_research_sources(
         sources=selected_sources,
     )
 
-if __name__ == '__main__':
+def main() -> None:
+    load_settings()
     mcp.run()
+
+
+if __name__ == '__main__':
+    main()

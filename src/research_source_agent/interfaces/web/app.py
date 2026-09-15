@@ -2,19 +2,13 @@
 
 from __future__ import annotations
 
-import sys
 import uuid
 from datetime import date
-from pathlib import Path
 
 import streamlit as st
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from research_source_agent.agent import ResearchSourceAgent
+from research_source_agent.agents.research import ResearchSourceAgent
 
 
 st.set_page_config(

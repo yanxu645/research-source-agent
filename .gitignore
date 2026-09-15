@@ -4,3 +4,20 @@ __pycache__/
 *.py[cod]
 *.log
 .runtime/
+.idea/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.env.*
+!.env.example
+
+# Local product materials and editor settings are not published.
+/product_deliverables/
+.vscode/
+.DS_Store
+Thumbs.db
+.streamlit/secrets.toml

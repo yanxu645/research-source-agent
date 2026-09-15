@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-source-agent"
+version = "0.1.0"
+description = "A traceable scholarly research agent powered by LangGraph."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain-core==1.2.6",
+    "langchain-openai==1.1.6",
+    "langgraph==1.0.5",
+    "langgraph-prebuilt==1.0.5",
+    "langsmith==0.5.0",
+    "mcp==1.25.0",
+    "pydantic==2.12.5",
+    "python-dotenv==1.2.1",
+    "requests==2.32.5",
+    "streamlit==1.52.2",
+]
+
+[project.scripts]
+research-source-agent = "research_source_agent.cli:main"
+research-source-mcp = "research_source_agent.interfaces.mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["research_source_agent*"]

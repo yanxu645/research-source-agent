@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from research_source_agent.agent import ResearchSourceAgent, content_to_str
-from research_source_agent.mcp_server import mcp, search_research_sources
-from research_source_agent.tools import search_scholarly_articles
+from research_source_agent.agents.research import ResearchSourceAgent, content_to_str
+from research_source_agent.interfaces.mcp.server import mcp, search_research_sources
+from research_source_agent.tools.article_search import search_scholarly_articles
 
 
 class FakeGraph:
@@ -78,7 +78,7 @@ class ToolInterfaceTests(TestCase):
     def test_mcp_tool_is_registered(self):
         self.assertIsNotNone(mcp._tool_manager.get_tool("search_research_sources"))
 
-    @patch("research_source_agent.tools.search_articles")
+    @patch("research_source_agent.tools.article_search.search_articles")
     def test_langchain_tool_passes_selected_sources(self, search_articles):
         search_articles.return_value = {"articles": []}
 
@@ -94,7 +94,7 @@ class ToolInterfaceTests(TestCase):
         )
         self.assertEqual(json.loads(output), {"articles": []})
 
-    @patch("research_source_agent.mcp_server.search_articles")
+    @patch("research_source_agent.interfaces.mcp.server.search_articles")
     def test_mcp_tool_passes_selected_sources(self, search_articles):
         search_articles.return_value = {"articles": []}
 

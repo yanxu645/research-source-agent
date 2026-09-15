@@ -6,7 +6,7 @@ from typing import Literal
 
 from langchain_core.tools import tool
 from pydantic import BaseModel, ConfigDict, Field
-from research_source_agent.article_search import search_articles
+from research_source_agent.services.retrieval import search_articles
 
 ArticleSource = Literal["crossref", "arxiv"]
 

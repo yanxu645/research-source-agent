@@ -4,9 +4,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectDir = $PSScriptRoot
+$projectDir = Split-Path -Parent $PSScriptRoot
 $pythonPath = Join-Path $projectDir '.venv\Scripts\python.exe'
-$appPath = Join-Path $projectDir 'app.py'
+$appPath = Join-Path $projectDir 'src\research_source_agent\interfaces\web\app.py'
 $runtimeDir = Join-Path $projectDir '.runtime'
 $statePath = Join-Path $runtimeDir 'server.json'
 $launchLock = $null
@@ -95,11 +95,11 @@ try {
     if (-not (Test-Path -LiteralPath $pythonPath)) {
         throw 'Project Python is missing. Restore .venv and install requirements.txt.'
     }
-    Push-Location (Split-Path -Parent $projectDir)
+    Push-Location $projectDir
     try {
-        & $pythonPath -c 'import streamlit; from research_source_agent.agent import ResearchSourceAgent' 2>&1 |
+        & $pythonPath -c 'import streamlit; from research_source_agent.agents.research import ResearchSourceAgent' 2>&1 |
             Out-File -LiteralPath (Join-Path $runtimeDir 'preflight.log') -Encoding utf8
-        if ($LASTEXITCODE -ne 0) { throw 'Python dependency check failed. See .runtime/preflight.log.' }
+        if ($LASTEXITCODE -ne 0) { throw 'Python dependency check failed. Run .venv\Scripts\python.exe -m pip install -r requirements.txt. See .runtime/preflight.log.' }
     } finally { Pop-Location }
 
     $selectedPort = $null

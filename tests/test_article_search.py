@@ -5,14 +5,14 @@ from types import SimpleNamespace
 import re
 import xml.etree.ElementTree as ET
 import requests
-from research_source_agent.article_search import (
+from research_source_agent.domain.articles import (
     Article,
-    _normalize_title,
-    _normalize_doi,
+    normalize_title,
+    normalize_doi,
     deduplicate_articles,
-    search_articles,
-    search_arxiv,
 )
+from research_source_agent.services.retrieval import search_articles
+from research_source_agent.infrastructure.scholarly import search_arxiv
 
 
 def make_article(title: str, doi: str = "", abstract: str = "") -> Article:
@@ -32,18 +32,18 @@ def make_article(title: str, doi: str = "", abstract: str = "") -> Article:
 
 class ArticleDeduplicationTests(TestCase):
     def test_normalizes_doi_urls(self):
-        self.assertEqual(_normalize_doi("https://doi.org/10.1000/ABC"), "10.1000/abc")
+        self.assertEqual(normalize_doi("https://doi.org/10.1000/ABC"), "10.1000/abc")
 
     def test_normalizes_title_punctuation_and_case(self):
         self.assertEqual(
-            _normalize_title("Generative-AI: Writing!"),
-            _normalize_title("generative ai writing"),
+            normalize_title("Generative-AI: Writing!"),
+            normalize_title("generative ai writing"),
         )
 
     def test_deduplicates_matching_doi(self):
         first = make_article("First metadata title", "10.1000/test")
         second = make_article("Updated metadata title", "https://doi.org/10.1000/TEST")
-        second.doi = _normalize_doi(second.doi)
+        second.doi = normalize_doi(second.doi)
         unique, removed = deduplicate_articles([first, second])
         self.assertEqual(len(unique), 1)
         self.assertEqual(removed, 1)
@@ -92,8 +92,8 @@ class ArticleDeduplicationTests(TestCase):
         self.assertEqual(removed, 1)
         self.assertEqual(unique[0].doi, "10.1000/shared")
 
-    @patch("research_source_agent.article_search.search_arxiv")
-    @patch("research_source_agent.article_search.search_crossref")
+    @patch("research_source_agent.services.retrieval.search_arxiv")
+    @patch("research_source_agent.services.retrieval.search_crossref")
     def test_aggregates_providers_and_reports_duplicates(self, crossref, arxiv):
         crossref.return_value = [make_article("Shared research paper", "10.1000/shared")]
         duplicate = make_article("Shared research paper", "10.1000/shared", "Rich abstract")
@@ -106,8 +106,8 @@ class ArticleDeduplicationTests(TestCase):
         self.assertEqual(result["duplicates_removed"], 1)
         self.assertEqual(result["articles"][0]["source_database"], "Crossref + arXiv")
 
-    @patch("research_source_agent.article_search.search_arxiv")
-    @patch("research_source_agent.article_search.search_crossref")
+    @patch("research_source_agent.services.retrieval.search_arxiv")
+    @patch("research_source_agent.services.retrieval.search_crossref")
     def test_keeps_partial_results_when_one_provider_times_out(self, crossref, arxiv):
         crossref.side_effect = requests.Timeout("timeout")
         arxiv.return_value = [make_article("Available arXiv paper")]
@@ -121,7 +121,7 @@ class ArticleDeduplicationTests(TestCase):
 
 class ArxivYearFilterTests(TestCase):
     def setUp(self):
-        clock_patch = patch("research_source_agent.article_search.datetime")
+        clock_patch = patch("research_source_agent.infrastructure.scholarly.datetime")
         clock = clock_patch.start()
         self.addCleanup(clock_patch.stop)
         clock.now.return_value = datetime(2026, 9, 7, 9, 0, tzinfo=timezone.utc)
@@ -138,7 +138,7 @@ class ArxivYearFilterTests(TestCase):
             text=ET.tostring(root, encoding="unicode"), raise_for_status=lambda: None
         )
 
-    @patch("research_source_agent.article_search.requests.get")
+    @patch("research_source_agent.infrastructure.scholarly.requests.get")
     def test_filters_before_provider_truncates_results(self, get):
         records = [
             ("Older relevant paper", "2024-12-31T23:59:00Z"),
@@ -162,14 +162,14 @@ class ArxivYearFilterTests(TestCase):
         self.assertEqual([article.title for article in articles], ["New eligible paper"])
         self.assertEqual(articles[0].year, 2025)
 
-    @patch("research_source_agent.article_search.requests.get")
+    @patch("research_source_agent.infrastructure.scholarly.requests.get")
     def test_unrestricted_search_keeps_older_papers(self, get):
         get.return_value = self.response_for([("Older paper", "2020-01-01T00:00:00Z")])
         articles = search_arxiv("topic", None, 1)
         self.assertEqual(articles[0].year, 2020)
         self.assertNotIn("submittedDate", get.call_args.kwargs["params"]["search_query"])
 
-    @patch("research_source_agent.article_search.requests.get")
+    @patch("research_source_agent.infrastructure.scholarly.requests.get")
     def test_retains_local_year_guard(self, get):
         get.return_value = self.response_for([
             ("Old paper", "2024-12-31T23:59:00Z"),
@@ -178,7 +178,7 @@ class ArxivYearFilterTests(TestCase):
         articles = search_arxiv("topic", 2025, 2)
         self.assertEqual([article.title for article in articles], ["Boundary paper"])
 
-    @patch("research_source_agent.article_search.requests.get")
+    @patch("research_source_agent.infrastructure.scholarly.requests.get")
     def test_future_year_returns_empty_without_invalid_range(self, get):
         self.assertEqual(search_arxiv("topic", 2027, 1), [])
         get.assert_not_called()
