@@ -22,7 +22,6 @@
 │   └── __main__.py
 ├── tests/                      # 离线单元与界面回归测试
 ├── scripts/start_app.ps1        # Windows后台启动与健康检查
-├── docs/architecture.md         # 模块边界、迁移说明、部署边界
 ├── .github/workflows/ci.yml     # 自动测试与打包
 ├── .streamlit/config.toml       # 界面配置
 ├── .env.example                # 环境变量示例
